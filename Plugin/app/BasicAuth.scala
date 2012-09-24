@@ -2,6 +2,10 @@ package info.schleichardt.play2.basicauth
 
 import play.api.mvc.{Action, Handler, RequestHeader}
 import play.api.mvc.Results._
+import play.api.Play
+import org.springframework.security.crypto.bcrypt.BCrypt
+import play.api.libs.Crypto
+
 
 case class Credentials(userName: String, password: String)
 
@@ -14,7 +18,6 @@ object BasicAuth {
     val formatted = credentials.userName + ":" + credentials.password
     new String(org.apache.commons.codec.binary.Base64.encodeBase64(formatted.getBytes))
   }
-
 
   def extractAuthDataFromHeader(headerOption: Option[String]): Option[Credentials] = {
     //inspired from guillaumebort  https://gist.github.com/2328236 24.09.2012
@@ -43,5 +46,9 @@ object BasicAuth {
       Option(Action {
         Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
       })
+  }
+
+  def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
+    Crypto.sign(encodeCredentials(credentials))
   }
 }
