@@ -1,12 +1,7 @@
 import info.schleichardt.play2.basicauth.BasicAuth
+import info.schleichardt.play2.basicauth.BasicAuth._
 import info.schleichardt.play2.basicauth.Credentials
 import org.specs2.mutable._
-
-import play.api.test._
-import play.api.test.FakeApplication
-import play.api.test.Helpers._
-
-import scala.collection.JavaConversions._
 
 class AuthSpec extends Specification {
   "BasicAuth" should {
@@ -14,6 +9,28 @@ class AuthSpec extends Specification {
       val credentials = Credentials("name", "pw")
       val expected = "bmFtZTpwdw=="
       BasicAuth.encodeCredentials(credentials) === expected
+    }
+
+    "be able to extract credentials from a request" in {
+      "request with empty credentials" in {
+        val emptyCredentialsHeader = Option("Basic Og==")
+        extractAuthDataFromHeader(emptyCredentialsHeader) === None
+      }
+
+      "request with only a userName" in {
+        val credentialsWithOnlyUserNameHeader = Option("Basic bmFtZTo=")
+        extractAuthDataFromHeader(credentialsWithOnlyUserNameHeader) === None
+      }
+
+      "request with only a password" in {
+        val credentialsWithOnlyPasswordHeader = Option("Basic OnB3")
+        extractAuthDataFromHeader(credentialsWithOnlyPasswordHeader) === None
+      }
+
+      "request with userName and password" in {
+        val credentialsHeader = Option("Basic bmFtZTpwdw==")
+        extractAuthDataFromHeader(credentialsHeader) === Option(Credentials("name", "pw"))
+      }
     }
   }
 }
