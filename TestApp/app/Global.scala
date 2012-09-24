@@ -5,8 +5,11 @@ import play.api.mvc.Results.Unauthorized
 import info.schleichardt.play2.basicauth.BasicAuth._
 
 object Global extends GlobalSettings {
+
+  val credentialSource = new CredentialsFromConfCheck
+
   override def onRouteRequest(request: RequestHeader) =
-    requireBasicAuthentication(request, new CredentialsFromConfCheck) {
+    requireBasicAuthentication(request, credentialSource) {
       super.onRouteRequest(request)
     }
 }
