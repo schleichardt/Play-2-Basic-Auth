@@ -1,8 +1,13 @@
 package info.schleichardt.play2.basicauth
 
-import play.api.mvc.Request
+import play.api.mvc.{Action, Handler, RequestHeader}
+import play.api.mvc.Results._
 
 case class Credentials(userName: String, password: String)
+
+trait CredentialCheck {
+  def authorized(credentials: Option[Credentials]): Boolean
+}
 
 object BasicAuth {
   def encodeCredentials(credentials: Credentials): String = {
@@ -25,5 +30,18 @@ object BasicAuth {
     }
   }
 
+  def requireBasicAuthentication(request: RequestHeader, checker: CredentialCheck, message: String = "Authentication needed")(handler: => Option[Handler]): Option[Handler] = {
+    val authHeader = request.headers.get("Authorization")
+    requireBasicAuthentication(authHeader, checker: CredentialCheck, message)(handler)
+  }
 
+  def requireBasicAuthentication(authHeader: Option[String], checker: CredentialCheck, message: String)(handler: => Option[Handler]): Option[Handler] = {
+    val mayBeCredentials = extractAuthDataFromHeader(authHeader)
+    if (checker.authorized(mayBeCredentials))
+      handler
+    else
+      Option(Action {
+        Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
+      })
+  }
 }
