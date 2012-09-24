@@ -1,4 +1,7 @@
-import info.schleichardt.play2.basicauth.{CredentialsFromConfCheck, CredentialCheck, BasicAuth, Credentials}
+package info.schleichardt.play2.basicauth
+
+import basicauth.{CredentialsFromConfCheck, Credentials, CredentialCheck}
+import info.schleichardt.play2.basicauth._
 import info.schleichardt.play2.basicauth.BasicAuth._
 import org.specs2.mutable._
 import play.api.mvc.{SimpleResult, Handler, RequestHeader, Action}

@@ -1,30 +1,35 @@
 package info.schleichardt.play2.basicauth
 
+import basicauth.{Credentials, CredentialCheck}
 import play.api.mvc.{Action, Handler, RequestHeader}
 import play.api.mvc.Results._
 import play.api.Play
 import play.api.libs.Crypto
 
 
-case class Credentials(userName: String, password: String)
+//contains only public API
+package object basicauth {
+  case class Credentials(userName: String, password: String)
 
-trait CredentialCheck {
-  def authorized(credentials: Option[Credentials]): Boolean
-}
+  trait CredentialCheck {
+    def authorized(credentials: Option[Credentials]): Boolean
+  }
 
-class CredentialsFromConfCheck extends CredentialCheck {
-  override def authorized(credentials: Option[Credentials]) = {
-    if (credentials.isDefined) {
-      val authConf = Play.current.configuration.getConfig("basic.auth")
-      val hashedCredentials = BasicAuth.hashCredentialsWithApplicationSecret(credentials.get)
-      authConf.flatMap(_.getString(credentials.get.userName)).exists(_ == hashedCredentials)
-    } else {
-      false
+  class CredentialsFromConfCheck extends CredentialCheck {
+    override def authorized(credentials: Option[Credentials]) = {
+      if (credentials.isDefined) {
+        val authConf = Play.current.configuration.getConfig("basic.auth")
+        val hashedCredentials = BasicAuth.hashCredentialsWithApplicationSecret(credentials.get)
+        authConf.flatMap(_.getString(credentials.get.userName)).exists(_ == hashedCredentials)
+      } else {
+        false
+      }
     }
   }
 }
 
-object BasicAuth {
+//contains onyl implementation code, should not be exposed
+private[basicauth] object BasicAuth {
   def encodeCredentials(credentials: Credentials): String = {
     val formatted = credentials.userName + ":" + credentials.password
     new String(org.apache.commons.codec.binary.Base64.encodeBase64(formatted.getBytes))
