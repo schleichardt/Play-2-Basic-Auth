@@ -17,14 +17,30 @@ package object basicauth {
   }
 
   class CredentialsFromConfCheck extends CredentialCheck {
+    import CredentialsFromConfCheck._
+
     override def authorized(credentials: Option[Credentials]) = {
       if (credentials.isDefined) {
         val authConf = Play.current.configuration.getConfig("basic.auth")
-        val hashedCredentials = BasicAuth.hashCredentialsWithApplicationSecret(credentials.get)
+        val hashedCredentials = hashCredentialsWithApplicationSecret(credentials.get)
         authConf.flatMap(_.getString(credentials.get.userName)).exists(_ == hashedCredentials)
       } else {
         false
       }
+    }
+  }
+
+  object CredentialsFromConfCheck {
+    def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
+      //TODO use function cache?
+      Crypto.sign(encodeCredentials(credentials))
+    }
+
+    //useful to generate with a console the hashes
+    //info.schleichardt.play2.basicauth.CredentialsFromConfCheck.hashCredentialsWithApplicationSecret("username", "password", "application secret")
+    def hashCredentialsWithApplicationSecret(userName: String, password: String, secret: String): String = {
+      val credentials = Credentials(userName, password)
+      Crypto.sign(encodeCredentials(credentials), secret.getBytes)
     }
   }
 
@@ -43,6 +59,7 @@ package object basicauth {
     requireBasicAuthentication(authHeader, checker: CredentialCheck, message)(handler)
   }
 }
+
 }
 
 
@@ -67,11 +84,6 @@ private[basicauth] object BasicAuth {
             }
         }
     }
-  }
-
-  def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
-    //TODO use function cache?
-    Crypto.sign(encodeCredentials(credentials))
   }
 }
 

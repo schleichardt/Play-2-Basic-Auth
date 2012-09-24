@@ -57,10 +57,12 @@ class AuthSpec extends Specification {
     }
 
     "be able to hash credentials" in {
+      import info.schleichardt.play2.basicauth.CredentialsFromConfCheck.hashCredentialsWithApplicationSecret
+
       val configMap: Map[String, String] = Map("application.secret" -> "[SAH]^9=]9>cE]Sgq_5[=IEWAckN?87y?Pd8vG6mk:35b@X[M?c8735y5ew7uMja")
       val app: FakeApplication = FakeApplication(additionalConfiguration = configMap)
       running(app) {
-        val hashed = BasicAuth.hashCredentialsWithApplicationSecret(credentials1)
+        val hashed = hashCredentialsWithApplicationSecret(credentials1)
         hashed === "5c83e7cdd87c8c3ac6000f53f2a0661ec346ffd5"
       }
     }
