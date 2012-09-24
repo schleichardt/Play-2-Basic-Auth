@@ -1,14 +1,15 @@
-package info.schleichardt.play2.basicauth
-
-import basicauth.{Credentials, CredentialCheck}
 import play.api.mvc.{Action, Handler, RequestHeader}
 import play.api.mvc.Results._
 import play.api.Play
 import play.api.libs.Crypto
 
+package info.schleichardt.play2 {
 
 //contains only public API
 package object basicauth {
+
+  import BasicAuth._
+
   case class Credentials(userName: String, password: String)
 
   trait CredentialCheck {
@@ -26,7 +27,26 @@ package object basicauth {
       }
     }
   }
+
+  def requireBasicAuthentication(authHeader: Option[String], checker: CredentialCheck, message: String)(handler: => Option[Handler]): Option[Handler] = {
+    val mayBeCredentials = extractAuthDataFromHeader(authHeader)
+    if (checker.authorized(mayBeCredentials))
+      handler
+    else
+      Option(Action {
+        Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
+      })
+  }
+
+  def requireBasicAuthentication(request: RequestHeader, checker: CredentialCheck, message: String = "Authentication needed")(handler: => Option[Handler]): Option[Handler] = {
+    val authHeader = request.headers.get("Authorization")
+    requireBasicAuthentication(authHeader, checker: CredentialCheck, message)(handler)
+  }
 }
+}
+
+
+package info.schleichardt.play2.basicauth {
 
 //contains onyl implementation code, should not be exposed
 private[basicauth] object BasicAuth {
@@ -49,23 +69,10 @@ private[basicauth] object BasicAuth {
     }
   }
 
-  def requireBasicAuthentication(request: RequestHeader, checker: CredentialCheck, message: String = "Authentication needed")(handler: => Option[Handler]): Option[Handler] = {
-    val authHeader = request.headers.get("Authorization")
-    requireBasicAuthentication(authHeader, checker: CredentialCheck, message)(handler)
-  }
-
-  def requireBasicAuthentication(authHeader: Option[String], checker: CredentialCheck, message: String)(handler: => Option[Handler]): Option[Handler] = {
-    val mayBeCredentials = extractAuthDataFromHeader(authHeader)
-    if (checker.authorized(mayBeCredentials))
-      handler
-    else
-      Option(Action {
-        Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
-      })
-  }
-
   def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
     //TODO use function cache?
     Crypto.sign(encodeCredentials(credentials))
   }
+}
+
 }

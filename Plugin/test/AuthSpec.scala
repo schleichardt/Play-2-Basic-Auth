@@ -1,12 +1,9 @@
 package info.schleichardt.play2.basicauth
 
-import basicauth.{CredentialsFromConfCheck, Credentials, CredentialCheck}
-import info.schleichardt.play2.basicauth._
 import info.schleichardt.play2.basicauth.BasicAuth._
 import org.specs2.mutable._
-import play.api.mvc.{SimpleResult, Handler, RequestHeader, Action}
+import play.api.mvc.{SimpleResult, Action}
 import play.api.mvc.Results.Unauthorized
-import play.api.test.{FakeApplication, FakeRequest, FakeHeaders}
 import play.api.test._
 import play.api.test.Helpers._
 
@@ -49,11 +46,11 @@ class AuthSpec extends Specification {
     }
 
     "be able to verify correct credentials" in {
-      requireBasicAuthentication(credentialsHeader, new TestCredentialChecker, "Message")(None) === None
+      info.schleichardt.play2.basicauth.requireBasicAuthentication(credentialsHeader, new TestCredentialChecker, "Message")(None) === None
     }
 
     "be able to reject wrong credentials" in {
-      val result = requireBasicAuthentication(credentialsWithOnlyUserNameHeader, new TestCredentialChecker, "Message")(None).get match {
+      val result = info.schleichardt.play2.basicauth.requireBasicAuthentication(credentialsWithOnlyUserNameHeader, new TestCredentialChecker, "Message")(None).get match {
         case action: Action[_] => action.apply(play.api.test.FakeRequest.apply().asInstanceOf[play.api.mvc.Request[Nothing]])
       }
       result.asInstanceOf[SimpleResult[Nothing]].header.status === Unauthorized.header.status
