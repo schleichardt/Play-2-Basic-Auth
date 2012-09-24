@@ -1,4 +1,4 @@
-import info.schleichardt.play2.basicauth.{CredentialCheck, BasicAuth, Credentials}
+import info.schleichardt.play2.basicauth.{CredentialsFromConfCheck, CredentialCheck, BasicAuth, Credentials}
 import info.schleichardt.play2.basicauth.BasicAuth._
 import org.specs2.mutable._
 import play.api.mvc.{SimpleResult, Handler, RequestHeader, Action}
@@ -62,6 +62,30 @@ class AuthSpec extends Specification {
       running(app) {
         val hashed = BasicAuth.hashCredentialsWithApplicationSecret(credentials1)
         hashed === "5c83e7cdd87c8c3ac6000f53f2a0661ec346ffd5"
+      }
+    }
+  }
+}
+
+class CredentialsFromConfCheckSpec extends Specification {
+  def createApp() = {
+    val userName = "name"
+    val configMap = Map("application.secret" -> "[SAH]^9=]9>cE]Sgq_5[=IEWAckN?87y?Pd8vG6mk:35b@X[M?c8735y5ew7uMja",
+      "basic.auth." + userName -> "5c83e7cdd87c8c3ac6000f53f2a0661ec346ffd5")
+    FakeApplication(additionalConfiguration = configMap)
+  }
+
+
+  "Credentials from config file" should {
+    "be confirmed, if existing" in {
+      running(createApp()) {
+        new CredentialsFromConfCheck().authorized(Option(Credentials("name", "pw"))) === true
+      }
+    }
+
+    "be denied, if not existing" in {
+      running(createApp()) {
+        new CredentialsFromConfCheck().authorized(Option(Credentials("name", "NOTpw"))) === false
       }
     }
   }

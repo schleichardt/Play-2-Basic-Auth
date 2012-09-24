@@ -3,7 +3,6 @@ package info.schleichardt.play2.basicauth
 import play.api.mvc.{Action, Handler, RequestHeader}
 import play.api.mvc.Results._
 import play.api.Play
-import org.springframework.security.crypto.bcrypt.BCrypt
 import play.api.libs.Crypto
 
 
@@ -11,6 +10,18 @@ case class Credentials(userName: String, password: String)
 
 trait CredentialCheck {
   def authorized(credentials: Option[Credentials]): Boolean
+}
+
+class CredentialsFromConfCheck extends CredentialCheck {
+  override def authorized(credentials: Option[Credentials]) = {
+    if (credentials.isDefined) {
+      val authConf = Play.current.configuration.getConfig("basic.auth")
+      val hashedCredentials = BasicAuth.hashCredentialsWithApplicationSecret(credentials.get)
+      authConf.flatMap(_.getString(credentials.get.userName)).exists(_ == hashedCredentials)
+    } else {
+      false
+    }
+  }
 }
 
 object BasicAuth {
@@ -49,6 +60,7 @@ object BasicAuth {
   }
 
   def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
+    //TODO use function cache?
     Crypto.sign(encodeCredentials(credentials))
   }
 }
