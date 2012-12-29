@@ -4,7 +4,8 @@ import info.schleichardt.play2.api.basicauth.BasicAuth._
 import org.specs2.mutable._
 import play.api.test.Helpers._
 import info.schleichardt.play2.api.basicauth.{CredentialsFromConfChecker, Authenticator, CredentialChecker, Credentials}
-import play.api.test.FakeApplication
+import play.api.test.{TestServer, FakeRequest, FakeApplication}
+import play.api.mvc.Action
 
 
 object TestCredentialChecker extends CredentialChecker {
@@ -21,8 +22,20 @@ class AuthSpec extends Specification {
   val credentialsHeader = Option("Basic bmFtZTpwdw==")
   val credentials1 = Credentials("name", "pw")
   val requireBasicAuthentication = Authenticator(TestCredentialChecker)
+  val defaultAction = Action { play.api.mvc.Results.Ok }
 
   "BasicAuth" should {
+
+    "deny unauthenticated requests" in {
+      val expected = Option(defaultAction)
+      requireBasicAuthentication(FakeRequest().withHeaders("Authorization" -> "Basic wrongbmFtZTpwdw=="), () => expected) !== expected
+    }
+
+    "allow authenticated requests" in {
+      val expected = Option(defaultAction)
+      requireBasicAuthentication(FakeRequest().withHeaders("Authorization" -> credentialsHeader.get), () => expected) === expected
+    }
+
     "be able to encode credentials" in {
       encodeCredentials(credentials1) === "bmFtZTpwdw=="
     }
