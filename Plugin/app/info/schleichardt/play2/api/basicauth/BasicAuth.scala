@@ -1,66 +1,66 @@
 package info.schleichardt.play2.api.basicauth
 
-import play.api.mvc.{Action, Handler, RequestHeader}
+import play.api.mvc.{RequestHeader, Action, Handler}
 import play.api.mvc.Results._
 import play.api.Play
 import play.api.libs.Crypto
+import org.apache.commons.codec.binary.Base64.encodeBase64
 
+case class Credentials(userName: String, password: String)
 
-//contains only public API
-object BasicAuth {
+trait CredentialChecker {
+  def authorized(credentials: Option[Credentials]): Boolean
+}
 
-  case class Credentials(userName: String, password: String)
+class CredentialsFromConfChecker extends CredentialChecker {
+  import CredentialsFromConfChecker._
 
-  trait CredentialCheck {
-    def authorized(credentials: Option[Credentials]): Boolean
-  }
-
-  class CredentialsFromConfCheck extends CredentialCheck {
-    import CredentialsFromConfCheck._
-
-    override def authorized(credentials: Option[Credentials]) = {
-      if (credentials.isDefined) {
-        val authConf = Play.current.configuration.getConfig("basic.auth")
-        val hashedCredentials = hashCredentialsWithApplicationSecret(credentials.get)
-        authConf.flatMap(_.getString(credentials.get.userName)).exists(_ == hashedCredentials)
-      } else {
-        false
-      }
+  override def authorized(credentials: Option[Credentials]) = {
+    if (credentials.isDefined) {
+      val authConf = Play.current.configuration.getConfig("basic.auth")
+      val hashedCredentials = hashCredentialsWithApplicationSecret(credentials.get)
+      authConf.flatMap(_.getString(credentials.get.userName)).exists(_ == hashedCredentials)
+    } else {
+      false
     }
   }
+}
 
-  object CredentialsFromConfCheck {
-    def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
-      //TODO use function cache?
-      Crypto.sign(encodeCredentials(credentials))
-    }
-
-    //useful to generate with a console the hashes
-    //info.schleichardt.play2.basicauth.CredentialsFromConfCheck.hashCredentialsWithApplicationSecret("username", "password", "application secret")
-    def hashCredentialsWithApplicationSecret(userName: String, password: String, secret: String): String = {
-      val credentials = Credentials(userName, password)
-      Crypto.sign(encodeCredentials(credentials), secret.getBytes)
-    }
+object CredentialsFromConfChecker {
+  import BasicAuth._
+  def hashCredentialsWithApplicationSecret(credentials: Credentials): String = {
+    //TODO use function cache?
+    Crypto.sign(encodeCredentials(credentials))
   }
 
-  def requireBasicAuthentication(authHeader: Option[String], checker: CredentialCheck, message: String)(handler: => Option[Handler]): Option[Handler] = {
-    val mayBeCredentials = extractAuthDataFromHeader(authHeader)
-    if (checker.authorized(mayBeCredentials))
-      handler
-    else
+  //useful to generate with a console the hashes
+  //info.schleichardt.play2.basicauth.CredentialsFromConfCheck.hashCredentialsWithApplicationSecret("username", "password", "application secret")
+  def hashCredentialsWithApplicationSecret(userName: String, password: String, secret: String): String = {
+    val credentials = Credentials(userName, password)
+    Crypto.sign(encodeCredentials(credentials), secret.getBytes)
+  }
+}
+
+case class Authenticator(checker: CredentialChecker, message: String = "Authentication needed") extends Function2[RequestHeader, () => Option[Handler], Option[Handler]] {
+  import BasicAuth._
+  override def apply(request: RequestHeader, defaultHandler: () => Option[Handler]): Option[Handler] = {
+    val mayBeCredentials = extractAuthDataFromHeader(request.headers.get("Authorization"))
+    if(checker.authorized(mayBeCredentials)){
+      defaultHandler()
+    } else {
       Option(Action {
         Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
       })
+    }
   }
 
-  def requireBasicAuthentication(request: RequestHeader, checker: CredentialCheck, message: String = "Authentication needed")(handler: => Option[Handler]): Option[Handler] = {
-    val authHeader = request.headers.get("Authorization")
-    requireBasicAuthentication(authHeader, checker: CredentialCheck, message)(handler)
-  }
 
+}
+
+object BasicAuth {
   def encodeCredentials(credentials: Credentials): String = {
     val formatted = credentials.userName + ":" + credentials.password
-    new String(org.apache.commons.codec.binary.Base64.encodeBase64(formatted.getBytes))
+    new String(encodeBase64(formatted.getBytes))
   }
 
   def extractAuthDataFromHeader(headerOption: Option[String]): Option[Credentials] = {

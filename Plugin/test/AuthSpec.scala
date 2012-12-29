@@ -2,13 +2,12 @@ package info.schleichardt.play2.basicauth
 
 import info.schleichardt.play2.api.basicauth.BasicAuth._
 import org.specs2.mutable._
-import play.api.mvc.{SimpleResult, Action}
-import play.api.mvc.Results.Unauthorized
-import play.api.test._
 import play.api.test.Helpers._
+import info.schleichardt.play2.api.basicauth.{CredentialsFromConfChecker, Authenticator, CredentialChecker, Credentials}
+import play.api.test.FakeApplication
 
 
-class TestCredentialChecker extends CredentialCheck {
+object TestCredentialChecker extends CredentialChecker {
   def authorized(credentials: Option[Credentials]) = credentials match {
     case Some(Credentials("User 1", "Password 1")) | Some(Credentials("name", "pw")) => true
     case _ => false
@@ -21,6 +20,7 @@ class AuthSpec extends Specification {
   val credentialsWithOnlyPasswordHeader = Option("Basic OnB3")
   val credentialsHeader = Option("Basic bmFtZTpwdw==")
   val credentials1 = Credentials("name", "pw")
+  val requireBasicAuthentication = Authenticator(TestCredentialChecker)
 
   "BasicAuth" should {
     "be able to encode credentials" in {
@@ -45,22 +45,11 @@ class AuthSpec extends Specification {
       }
     }
 
-    "be able to verify correct credentials" in {
-      requireBasicAuthentication(credentialsHeader, new TestCredentialChecker, "Message")(None) === None
-    }
-
-    "be able to reject wrong credentials" in {
-      val result = requireBasicAuthentication(credentialsWithOnlyUserNameHeader, new TestCredentialChecker, "Message")(None).get match {
-        case action: Action[_] => action.apply(play.api.test.FakeRequest.apply().asInstanceOf[play.api.mvc.Request[Nothing]])
-      }
-      result.asInstanceOf[SimpleResult[Nothing]].header.status === Unauthorized.header.status
-    }
-
     "be able to hash credentials" in {
       val configMap: Map[String, String] = Map("application.secret" -> "[SAH]^9=]9>cE]Sgq_5[=IEWAckN?87y?Pd8vG6mk:35b@X[M?c8735y5ew7uMja")
       val app: FakeApplication = FakeApplication(additionalConfiguration = configMap)
       running(app) {
-        val hashed = CredentialsFromConfCheck.hashCredentialsWithApplicationSecret(credentials1)
+        val hashed = CredentialsFromConfChecker.hashCredentialsWithApplicationSecret(credentials1)
         hashed === "5c83e7cdd87c8c3ac6000f53f2a0661ec346ffd5"
       }
     }
@@ -79,13 +68,13 @@ class CredentialsFromConfCheckSpec extends Specification {
   "Credentials from config file" should {
     "be confirmed, if existing" in {
       running(createApp()) {
-        new CredentialsFromConfCheck().authorized(Option(Credentials("name", "pw"))) === true
+        new CredentialsFromConfChecker().authorized(Option(Credentials("name", "pw"))) === true
       }
     }
 
     "be denied, if not existing" in {
       running(createApp()) {
-        new CredentialsFromConfCheck().authorized(Option(Credentials("name", "NOTpw"))) === false
+        new CredentialsFromConfChecker().authorized(Option(Credentials("name", "NOTpw"))) === false
       }
     }
   }
