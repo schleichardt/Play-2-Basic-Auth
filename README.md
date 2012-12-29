@@ -1,5 +1,6 @@
 Play-2-Basic-Auth
 =================
+This is a spare time project. Use it as your own risk. Pull requests are welcome.
 
 ## Licence
 This software is licensed under the Apache 2 license, quoted below.
