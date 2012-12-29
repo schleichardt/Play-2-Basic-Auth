@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 import PlayProject._
 
-object ApplicationBuild extends Build {
+object PluginBuild extends Build {
 
   val moduleOrganization = "info.schleichardt"
   val appName = "play-2-basic-auth"
