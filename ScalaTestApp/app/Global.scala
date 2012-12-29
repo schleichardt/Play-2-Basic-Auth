@@ -1,7 +1,7 @@
 import play.api.GlobalSettings
 import play.api.mvc.RequestHeader
-import info.schleichardt.play2.api.basicauth.CredentialsFromConfChecker
-import info.schleichardt.play2.api.basicauth.Authenticator
+import info.schleichardt.play2.basicauth.CredentialsFromConfChecker
+import info.schleichardt.play2.basicauth.Authenticator
 
 object Global extends GlobalSettings {
 

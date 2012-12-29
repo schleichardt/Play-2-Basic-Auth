@@ -1,6 +1,6 @@
-package info.schleichardt.play2.api.basicauth
+package info.schleichardt.play2.basicauth
 
-import play.api.mvc.{RequestHeader, Action, Handler}
+import play.api.mvc.{AnyContent, RequestHeader, Action, Handler}
 import play.api.mvc.Results._
 import play.api.Play
 import play.api.libs.Crypto
@@ -48,13 +48,9 @@ case class Authenticator(checker: CredentialChecker, message: String = "Authenti
     if(checker.authorized(mayBeCredentials)){
       defaultHandler()
     } else {
-      Option(Action {
-        Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
-      })
+      unauthorizedHandlerOption(message)
     }
   }
-
-
 }
 
 object BasicAuth {
@@ -76,5 +72,9 @@ object BasicAuth {
         }
     }
   }
+
+  def unauthorizedHandlerOption(message: String): Option[Action[AnyContent]] = Option(Action {
+    Unauthorized.withHeaders("WWW-Authenticate" -> """Basic realm="%s"""".format(message))
+  })
 }
 

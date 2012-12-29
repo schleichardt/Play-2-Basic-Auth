@@ -1,9 +1,8 @@
 package info.schleichardt.play2.basicauth
 
-import info.schleichardt.play2.api.basicauth.BasicAuth._
+import BasicAuth._
 import org.specs2.mutable._
 import play.api.test.Helpers._
-import info.schleichardt.play2.api.basicauth.{CredentialsFromConfChecker, Authenticator, CredentialChecker, Credentials}
 import play.api.test.{TestServer, FakeRequest, FakeApplication}
 import play.api.mvc.Action
 
