@@ -1,14 +1,13 @@
+package info.schleichardt.play2.api.basicauth
+
 import play.api.mvc.{Action, Handler, RequestHeader}
 import play.api.mvc.Results._
 import play.api.Play
 import play.api.libs.Crypto
 
-package info.schleichardt.play2 {
 
 //contains only public API
-package object basicauth {
-
-  import BasicAuth._
+object BasicAuth {
 
   case class Credentials(userName: String, password: String)
 
@@ -58,15 +57,7 @@ package object basicauth {
     val authHeader = request.headers.get("Authorization")
     requireBasicAuthentication(authHeader, checker: CredentialCheck, message)(handler)
   }
-}
 
-}
-
-
-package info.schleichardt.play2.basicauth {
-
-//contains onyl implementation code, should not be exposed
-private[basicauth] object BasicAuth {
   def encodeCredentials(credentials: Credentials): String = {
     val formatted = credentials.userName + ":" + credentials.password
     new String(org.apache.commons.codec.binary.Base64.encodeBase64(formatted.getBytes))
@@ -87,4 +78,3 @@ private[basicauth] object BasicAuth {
   }
 }
 
-}

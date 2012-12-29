@@ -1,6 +1,6 @@
 package info.schleichardt.play2.basicauth
 
-import info.schleichardt.play2.basicauth.BasicAuth._
+import info.schleichardt.play2.api.basicauth.BasicAuth._
 import org.specs2.mutable._
 import play.api.mvc.{SimpleResult, Action}
 import play.api.mvc.Results.Unauthorized
@@ -24,7 +24,7 @@ class AuthSpec extends Specification {
 
   "BasicAuth" should {
     "be able to encode credentials" in {
-      BasicAuth.encodeCredentials(credentials1) === "bmFtZTpwdw=="
+      encodeCredentials(credentials1) === "bmFtZTpwdw=="
     }
 
     "be able to extract credentials from a request" in {
@@ -46,23 +46,21 @@ class AuthSpec extends Specification {
     }
 
     "be able to verify correct credentials" in {
-      info.schleichardt.play2.basicauth.requireBasicAuthentication(credentialsHeader, new TestCredentialChecker, "Message")(None) === None
+      requireBasicAuthentication(credentialsHeader, new TestCredentialChecker, "Message")(None) === None
     }
 
     "be able to reject wrong credentials" in {
-      val result = info.schleichardt.play2.basicauth.requireBasicAuthentication(credentialsWithOnlyUserNameHeader, new TestCredentialChecker, "Message")(None).get match {
+      val result = requireBasicAuthentication(credentialsWithOnlyUserNameHeader, new TestCredentialChecker, "Message")(None).get match {
         case action: Action[_] => action.apply(play.api.test.FakeRequest.apply().asInstanceOf[play.api.mvc.Request[Nothing]])
       }
       result.asInstanceOf[SimpleResult[Nothing]].header.status === Unauthorized.header.status
     }
 
     "be able to hash credentials" in {
-      import info.schleichardt.play2.basicauth.CredentialsFromConfCheck.hashCredentialsWithApplicationSecret
-
       val configMap: Map[String, String] = Map("application.secret" -> "[SAH]^9=]9>cE]Sgq_5[=IEWAckN?87y?Pd8vG6mk:35b@X[M?c8735y5ew7uMja")
       val app: FakeApplication = FakeApplication(additionalConfiguration = configMap)
       running(app) {
-        val hashed = hashCredentialsWithApplicationSecret(credentials1)
+        val hashed = CredentialsFromConfCheck.hashCredentialsWithApplicationSecret(credentials1)
         hashed === "5c83e7cdd87c8c3ac6000f53f2a0661ec346ffd5"
       }
     }
