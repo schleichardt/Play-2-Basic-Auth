@@ -6,7 +6,7 @@ object ApplicationBuild extends Build {
 
   val moduleOrganization = "info.schleichardt"
   val appName = "play-2-basic-auth"
-  val appVersion = "0.1-SNAPSHOT"
+  val appVersion = "0.2-SNAPSHOT"
   val publishingFolder = Path.userHome.absolutePath + "/Projekte/schleichardt.github.com/jvmrepo"
 
   val appDependencies = Seq(
