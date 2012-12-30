@@ -15,7 +15,8 @@ object PluginBuild extends Build {
   val main = PlayProject(appName, appVersion, appDependencies).settings(
     organization := moduleOrganization,
     publishTo := Some(Resolver.file("file", new File(publishingFolder))(Resolver.mavenStylePatterns)),
-    publishMavenStyle := true
+    publishMavenStyle := true,
+    javacOptions ++= Seq("-source", "1.6", "-target", "1.6")//for compatibility with Debian Squeeze
   )
 
 }
