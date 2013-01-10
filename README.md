@@ -14,4 +14,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 Notes
 =====
     play console
-    info.schleichardt.play2.basicauth.CredentialsFromConfCheck.hashCredentialsWithApplicationSecret("<user>","<password>","<appsecret>")
+    info.schleichardt.play2.basicauth.CredentialsFromConfChecker.hashCredentialsWithApplicationSecret("<user>","<password>","<appsecret>")
